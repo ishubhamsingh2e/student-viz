@@ -58,6 +58,28 @@ if uploaded_file:
             "Select Employee ID", df["EmpID"].unique())
         df = df[df["EmpID"] == employee_selected]
 
+    # Filters
+    with st.sidebar:
+        department_filter = st.selectbox(
+            "Filter by Department",
+            ["All"] + df["Department Name"].dropna().unique().tolist(),
+        )
+        division_filter = st.selectbox(
+            "Filter by Division",
+            ["All"] + df["Division Name"].dropna().unique().tolist(),
+        )
+        direct_filter = st.selectbox(
+            "Filter by Direct/Indirect",
+            ["All"] + df["Direct/Indirect"].dropna().unique().tolist(),
+        )
+
+        if department_filter != "All":
+            df = df[df["Department Name"] == department_filter]
+        if division_filter != "All":
+            df = df[df["Division Name"] == division_filter]
+        if direct_filter != "All":
+            df = df[df["Direct/Indirect"] == direct_filter]
+
     # Metrics
     total_employees = df["EmpID"].nunique()
     present_count = df[df["Final Status"] == "P"]["EmpID"].count()
@@ -67,8 +89,8 @@ if uploaded_file:
     with st.container():
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Total Employees", total_employees)
-        col2.metric("Total Present", present_count)
-        col3.metric("Total Absent", absent_count)
+        col2.metric("Present Today", present_count)
+        col3.metric("Absent Today", absent_count)
         col4.metric("Total Overtime Hours", overtime_hours)
 
     # Graphs
