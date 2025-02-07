@@ -2,6 +2,34 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# Define expected columns
+EXPECTED_COLUMNS = [
+    "Sr. No.",
+    "EmpID",
+    "Attendance Code",
+    "FName",
+    "Branch Code",
+    "Department Name",
+    "Division Name",
+    "ReportingEmpCode",
+    "ReportingEmpName",
+    "Grade Code",
+    "Designation Name",
+    "Direct/Indirect",
+    "Roster",
+    "Auto Shift Name",
+    "Date of Joining",
+    "Attendance Date",
+    "In Time",
+    "Out Time",
+    "Total Hours",
+    "OT Hours",
+    "Late Hours",
+    "Application Status",
+    "Final Status",
+    "Attendance Type",
+]
+
 
 # Load data from Excel
 def load_data(file):
@@ -13,18 +41,17 @@ def load_data(file):
 
 # Preprocess data
 def preprocess_data(df):
+    # Keep only expected columns
+    df = df[[col for col in df.columns if col in EXPECTED_COLUMNS]]
+
+    # Ensure all expected columns exist
+    for col in EXPECTED_COLUMNS:
+        if col not in df.columns:
+            df[col] = None
+
     df = df.fillna(
-        {
-            "EmpID": 0,
-            "FName": "Unknown",
-            "Attendance Code": "N/A",
-            "In Time": "00:00",
-            "Out Time": "00:00",
-            "Total Hours": 0,
-            "OT Hours": 0,
-            "Late Hours": 0,
-            "Final Status": "Pending",
-        }
+        {col: "Unknown" if df[col].dtype ==
+            "O" else 0 for col in EXPECTED_COLUMNS}
     )
     df.dropna(inplace=True)
     return df
@@ -46,8 +73,7 @@ if uploaded_file:
 
     if dashboard_option == "Sheet-wise":
         sheet_selected = st.selectbox("Select Sheet", sheets)
-        df = data[sheet_selected]
-        df = preprocess_data(df)
+        df = preprocess_data(data[sheet_selected])
 
     elif dashboard_option == "All Sheets Summary":
         df = pd.concat([preprocess_data(data[sheet]) for sheet in sheets])
@@ -135,18 +161,14 @@ if uploaded_file:
             )
             st.plotly_chart(fig3, use_container_width=True)
 
-    # New Graphs
+    # Additional Graphs
     with st.container():
         col1, col2, col3 = st.columns(3)
 
         with col1:
             st.subheader("Peak In & Out Times")
-            df["In Time"] = pd.to_datetime(
-                df["In Time"], format="%H:%M", errors="coerce"
-            )
-            df["Out Time"] = pd.to_datetime(
-                df["Out Time"], format="%H:%M", errors="coerce"
-            )
+            df["In Time"] = pd.to_datetime(df["In Time"], errors="coerce")
+            df["Out Time"] = pd.to_datetime(df["Out Time"], errors="coerce")
 
             in_time_counts = df["In Time"].dt.hour.value_counts().reset_index()
             in_time_counts.columns = ["Hour", "Count"]
